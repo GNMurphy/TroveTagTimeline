@@ -8,6 +8,8 @@
     <OutputType>Library</OutputType>
     <ProjectTypeGuids>{A0786B88-2ADB-4C21-ABE8-AA2D79766269}</ProjectTypeGuids>
     <RuntimeVersion>7.1</RuntimeVersion>
+    <SpecificPageValue>index.php</SpecificPageValue>
+    <StartAction>SpecificPage</StartAction>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <IncludeDebugInformation>true</IncludeDebugInformation>
@@ -19,8 +21,6 @@
     <Compile Include="index.php" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Index1.html" />
-    <Content Include="info.jpg" />
     <Content Include="stylesheet.css" />
   </ItemGroup>
 </Project>
