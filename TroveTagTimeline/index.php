@@ -534,7 +534,7 @@
 
         global $tags, $tagMaxMin, $articles;
 
-        $headerToolTip = 'Word cloud showing all tags found in the search results. \nTags that are used in only 1 item are not shown initially; click the chevron to the left to show/hide theses tags';
+        $headerToolTip = "Word cloud showing all tags found in the search results. \nTags that are associated with only 1 item are not shown initially; click the chevron to the left to show/hide theses tags";
         $showCloudToolTip = 'Show Tag Cloud';
         $hideCloudToolTip = 'Hide Tag Cloud';
         $showMinorTagsToolTip = 'Show tags that occur in only 1 item';
