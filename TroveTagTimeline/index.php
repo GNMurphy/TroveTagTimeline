@@ -123,14 +123,16 @@
 
 //        array_push($queryStrings, "");
         //        array_push($queryStrings, "NSW 2583");
-        array_push($queryStrings, "Gunning NSW 2581");
-        array_push($queryStrings, "Dalton NSW 2581");
-        array_push($queryStrings, "Breadalbane NSW 2581");
         array_push($queryStrings, "Biala NSW 2581");
         array_push($queryStrings, "Blakney Creek NSW 2581");
+        array_push($queryStrings, "Breadalbane NSW 2581");
         array_push($queryStrings, "Collector NSW 2581");
+        array_push($queryStrings, "Dalton NSW 2581");
+        array_push($queryStrings, "Gunning NSW 2581");
+        array_push($queryStrings, "Lade Vale NSW 2581");
+        array_push($queryStrings, "Lake George NSW 2581");
         array_push($queryStrings, "Lerida NSW 2581");
-        array_push($queryStrings, "NSW 2581");
+//        array_push($queryStrings, "NSW 2581");
 
 //        array_push($queryStrings, "Grabben Gullen NSW 2583");
 
