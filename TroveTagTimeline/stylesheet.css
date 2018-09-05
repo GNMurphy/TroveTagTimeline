@@ -137,7 +137,7 @@ td, th {
     vertical-align: middle;
     border: none;
     white-space: nowrap;
-    background: white;
+    background-color: transparent;
     border-collapse: collapse;
     border-spacing: 0;
 }
@@ -359,14 +359,16 @@ div.tagCloud {
 
 .form {
     float: left;
-    width: 300px;
+    max-width: 290px;
+    min-width: 290px;
     padding: 10px 10px 10px 10px;
+    background: linear-gradient(to right, #c5d3ed, white);
 }
 
 .info {
     padding: 10px 10px 10px 0;
     font-family: 'Times New Roman';
-    font-size: 12px;
+    font-size: medium;
 }
 
 td.info {

@@ -133,8 +133,9 @@
     {
         echo "
             <div class=\"year\" style=\"position:absolute; left:0;width:100%;\">&nbsp;</div>
+            <div class=\"timeline\" style=\"margin-left: 0;\">
 
-            <div class=\"form\" name=\"queryTags\" style=\"margin-top:6px;\">
+            <div class=\"form\" name=\"queryTags\" style=\"margin-top:6px; background:linear-gradient(to right, #c5d3ed, white);\">
         ";
 
         formHeader();
@@ -178,7 +179,7 @@
                             <td class=\"info\">&nbsp;</td>
                             <td class=\"info\"><strong>NSW 2581</strong></td>
                             <td class=\"info\" style=\"white-space: normal;\">
-                                is unlikely to return any exactly matching results, but will return a number of results with tags that include 'NSW 2581'
+                                is unlikely to return any exactly matching results, but will return a number of results with tags that include 'NSW&nbsp;2581'
                                 <br/>
                                 These results will be displayed in the summary row.
                             </td>
@@ -828,9 +829,6 @@
         print("<br/>" . count($displayStrings) . "<br/>");
     }
 
-    echo "
-            <div class=\"timeline\">
-        ";
 
     // if there are no query tags, display an input form only
     if (count($queryStrings) == 0)
@@ -902,6 +900,9 @@
 
         //    echo $startYear . "-" . $endYear . " (" . $columns . ")<br/>";
 
+        echo "
+            <div class=\"timeline\">
+        ";
         formHeader();
         yearRow($startYear, $endYear);
 
