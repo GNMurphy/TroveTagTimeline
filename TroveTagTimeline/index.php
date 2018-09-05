@@ -57,10 +57,55 @@
             document.getElementById($id).style.visibility = "hidden";
             console.log(" - exit hideHideResultsButton(" + $id + ")");
         }
+        function addQueryInput() {
+            var t = document.getElementById('timelineTable');
+
+            //look for blank input fields
+            var e = 0;
+            for (var x = 0; x < t.getElementsByTagName('input').length; x++) {
+                var n = t.getElementsByTagName('input')[x];
+                if (n.value == "") {
+                    e++;
+                }
+            }
+
+            //if no blank input fields, add one
+            if (e == 0) {
+                var x = t.getElementsByTagName('input').length;
+
+                var r = t.insertRow(x + 2);  // add 3 for Year, Summary and Header rows, less 1 for the button
+                r.setAttribute("class", "results");
+
+                var h = document.createElement('th');
+                h.setAttribute('class', 'headcol');
+
+                r.appendChild(h);
+
+                var i = document.createElement('input');
+                i.setAttribute("name", "searchTag[]");
+                i.setAttribute("type", "text")
+                i.setAttribute("onchange", "addQueryInput()")
+                i.setAttribute("autocomplete", "off")
+
+                h.appendChild(i);
+                i.focus();
+
+                // add a hidden element to store the original value so we can detect changes
+                var s = document.createdElement('span');
+                s.setAttribute('display', 'hidden');
+                s.value = i.value;
+
+                checkForChanges();
+            }
+        }
+        function checkForChanges()
+        {
+
+        }
     </script>
 </head>
 
-<body>
+<body onload="document.getElementById('input1').focus();">
     <div class="pageHeader">
         <h1>Trove Tag Timeline</h1>
     </div>
@@ -81,29 +126,152 @@
         define(TROVE_INCLUDE, "tags,comments");
 //      define(TROVE_URL, "http://api.trove.nla.gov.au");
         define(TROVE_URL, "https://api.trove.nla.gov.au/v2");
+        define(QUERY_INPUT, '<input type="text" name="searchTag[]" onchange="addQueryInput()" autocomplete="off" ');
 
 
     function displayBlankForm()
     {
         echo "
-            <div class=\"year\">
-                <div class=\"form\">
+            <div class=\"year\" style=\"position:absolute; left:0;width:100%;\">&nbsp;</div>
+            <div class=\"form\" name=\"queryTags\" style=\"margin-top:6px;\">
         ";
-        formHeader();
-        echo "
-                    </form>
-                </div>
-                </div class=\"info\">
 
-                <\div>
+        formHeader();
+//        yearRow(0,0);
+
+        echo "
+                        <tr class=\"results\">
+                            <th class=\"headcol\">&nbsp;</th>
+                        </tr>
+        ";
+        searchTagHeader();
+        echo "
+                            <tr class=\"results\">
+                            <th class=\"headcol\">
+                                " .QUERY_INPUT .  " id=\"input1\" />
+                            </th>
+                        </tr>
+                        <tr class=\"results\">
+                            <th class=\"headcol\">
+                                " .QUERY_INPUT .  " />
+                            </th>
+                            <td>&nbsp;</td>
+                        </tr>
+        ";
+        displayTagHeader();
+        searchButton();
+        echo "
+                    </table>
+                </form>
             </div>
+            <div class=\"info\" style=\"vertical-align:middle;padding:20px 0 20px 0;\" >
+                <div class=\"info\">Enter one or more search terms into the Search Tag fields. (Additional fields will display when the existing ones are used.)</div>
+                <div class=\"info\">All results will be shown on the top 'Summary' row.  Exact matches will be displayed against each tag.</div>
+                    <table class=\"info\" style=\"border: none;\">
+                        <tr>
+                            <td class=\"info\">Examples:</td>
+                            <td class=\"info\"><strong>Lade Vale NSW 2581</strong></td>
+                            <td class=\"info\">will display a number of exactly matching results</td>
+                        </tr>
+                        <tr>
+                            <td class=\"info\">&nbsp;</td>
+                            <td class=\"info\"><strong>NSW 2581</strong></td>
+                            <td class=\"info\">is unlikely to return any exactly matching results, but will return a number of results with tags that include 'NSW 2581'
+                                <br/>
+                                These results will be displayed in the summary row.
+                            </td>
+                        </tr>
+                    </table>
+            </div>
+            <script>
+                document.getElementById('input1').focus();
+            </script>
+        </div>
         ";
     }
+
+    function blankInput()
+    {
+        echo "
+                        <tr class=\"results\">
+                            <th class=\"headcol\">
+                                " .QUERY_INPUT .  "/>
+                            </th>
+                        </tr>
+        ";
+    }
+
 
     function formHeader()
     {
         echo "
-            <form method=\"get\">
+            <form method=\"post\">
+                <table class=\"timelineTable\" id=\"timelineTable\">
+
+        ";
+    }
+
+    function searchTagHeader()
+    {
+        global $columns;
+        $c=$columns;
+        if ($c ==0) {$c=1;}
+
+        echo "
+                    <tr class=\"groupHeader\">
+                        <th class=\"headcol\">
+                            <div class=\"groupHeader\">
+                                Search Tags
+                            </div>
+                            <div class=\"headerInfo\">
+                                <a
+                                    class=\"groupHeader\"
+                                    title=\"These are the terms that are used to search Trove. \nTerms are cumulative (logical OR); items that match any of the Search Tags will be returned\">
+                                    i
+                                </a>
+                            </div>
+                        </th>
+                        <td colspan=\"" . $c . "\">&nbsp;</td>
+                    </tr>
+        ";
+    }
+
+    function displayTagHeader()
+    {
+        global $columns;
+        $c=$columns;
+        if ($c ==0) {$c=1;}
+
+        echo "
+                    <tr class=\"groupHeader\">
+                        <th class=\"headcol\">
+                            <div class=\"groupHeader\">
+                                Display Tags
+                            </div>
+                            <div class=\"headerInfo\">
+                                <a
+                                    class=\"groupHeader\"
+                                    title=\"These are tags found in the items returned from the Trove search.  \nAdd tags to this list from the tag cloud \"
+                                    >
+                                    i
+                                </a>
+                            </div>
+                        </th>
+                        <td colspan=\"" . $c . "\">&nbsp;</td>
+                    </tr>
+                ";
+    }
+
+    function searchButton()
+    {
+        echo "
+                    <tr class=\"groupHeader\">
+                        <th class=\"headcol\">
+                            <div class=\"submit\">
+                                <input type=\"submit\" value=\"Search\"/>
+                            </div>
+                        </th>
+                    </tr>
         ";
     }
 
@@ -112,26 +280,30 @@
         if (DEBUG) { print time() . " start initialiseTags<br/>"; }
         global $tags, $queryStrings, $displayStrings;
 
-        $searchTags=$_GET["search"];
+        foreach ($_POST["searchTag"] as $s) {
+            if(trim($s) != '') {
+                array_push($queryStrings, $s);
+            }
+        }
 
         if (DEBUG)
         {
             print("Search tags<br/>");
-            print_r($searchTags);
-            print("<br/>" . count($searchTags) . "<br/>");
+            print_r($queryStrings);
+            print("<br/>" . count($queryStrings) . " - " . count($_POST['searchTag']) . "<br/>");
         }
 
 //        array_push($queryStrings, "");
-        //        array_push($queryStrings, "NSW 2583");
-        array_push($queryStrings, "Biala NSW 2581");
-        array_push($queryStrings, "Blakney Creek NSW 2581");
-        array_push($queryStrings, "Breadalbane NSW 2581");
-        array_push($queryStrings, "Collector NSW 2581");
-        array_push($queryStrings, "Dalton NSW 2581");
-        array_push($queryStrings, "Gunning NSW 2581");
-        array_push($queryStrings, "Lade Vale NSW 2581");
-        array_push($queryStrings, "Lake George NSW 2581");
-        array_push($queryStrings, "Lerida NSW 2581");
+//        array_push($queryStrings, "NSW 2583");
+//        array_push($queryStrings, "Biala NSW 2581");
+//        array_push($queryStrings, "Blakney Creek NSW 2581");
+//        array_push($queryStrings, "Breadalbane NSW 2581");
+//        array_push($queryStrings, "Collector NSW 2581");
+//        array_push($queryStrings, "Dalton NSW 2581");
+//        array_push($queryStrings, "Gunning NSW 2581");
+//        array_push($queryStrings, "Lade Vale NSW 2581");
+//        array_push($queryStrings, "Lake George NSW 2581");
+//        array_push($queryStrings, "Lerida NSW 2581");
 //        array_push($queryStrings, "NSW 2581");
 
 //        array_push($queryStrings, "Grabben Gullen NSW 2583");
@@ -170,7 +342,10 @@
 //          array_push($displayStrings,"Inglewood");
 //          array_push($displayStrings,"Eschol");
 
-          if (DEBUG) {print count($queryStrings) . "<br/>";}
+        if (DEBUG)
+        {
+            print count($queryStrings) . "<br/>";
+        }
 
         //  add each query tag to $tags and create an entry in $articles
         for ($i=0; $i<count($queryStrings); $i++)
@@ -243,33 +418,6 @@
         }
 
         if (DEBUG) { print time() . " end insertArticle<br/>"; }
-    }
-
-    function xinitaliseArticles()
-    {
-        global $articles, $queryStrings, $displayStrings, $tagIndex;
-
-        array_push($articles, array());
-        array_push($articles[0], "Summary");
-
-        // create nodes in articles array for each search and display tag, and record the index in the tags array
-
-        for ($a=0; $a < count($queryStrings); $a++)
-        //foreach ($queryStrings as $q => $q_value)
-        {
-            array_push($articles, array());
-            $tagIndex[strtolower($queryStrings[$a])]=array(count($articles)-1,"search");
-            $articles[$tagIndex[strtolower($queryStrings[$a])][0]][0]=$queryStrings[$a];
-        }
-
-        for ($a=0; $a < count($displayStrings); $a++)
-        {
-            array_push($articles, array());
-            $tagIndex[strtolower($displayStrings[$a])]=array(count($articles)-1,"display");
-            $articles[$tagIndex[strtolower($displayStrings[$a])][0]][0]=$displayStrings[$a];
-        }
-
-//        print_r($tagIndex);
     }
 
     function initialTroveQuery()
@@ -413,48 +561,6 @@
         if (DEBUG) { print time() . " end processArticles<br/>"; }
 	}
 
-    function xprocessArticles()
-	{
-		global $articles, $tags, $tagIndex, $queryStrings, $displayStrings;
-
-        //  $articles: an array of article objects retrieved from Trove
-        //  $tags    : an associative array indexed by tag (lower case).  Each node contains the tag string and number of articles conatining the tag.
-
-
-		for ($a=0; $a<count($articles[0]); $a++)
-		{
-			$article=$articles[0][$a];
-			for ($c=0; $c<$article->childNodes->length; $c++)
-			{
-				$node=$article->childNodes->item($c);
-				if ($node->nodeName == "tag")
-                {
-                    $tag=$node->nodeValue;
-
-                    // if the tag is already in $tags, increment the counter.  if not, add it.
-                    if (array_key_exists(strtolower($tag),$tags))
-                    {
-                        $tags[strtolower($tag)][1]++;
-                    }
-                    else
-                    {
-                        $tags[strtolower($tag)]=array($tag, 1, "other");
-                        if (array_key_exists(strtolower($tag),$tagIndex))
-                        {
-                            $tags[strtolower($tag)][2]=$tagIndex[strtolower($tag)][1];
-                        }
-                    }
-
-                    // if this tag is one of the search or display tags, add the article to the node for this tag
-                    if (array_key_exists(strtolower($tag), $tagIndex))
-                    {
-                        array_push($articles[$tagIndex[strtolower($tag)][0]],$article);
-                    }
-                }
-			}
-		}
-	}
-
     function blankRow($rowArray)
     {
 		echo "<tr class=\"filler\" height=\"5\">
@@ -506,26 +612,33 @@
     function yearRow($start, $end)
     {
         echo "
-        <tr class=\"year\">
-        <th class=\"yearHead\">"
-        ;
+                <tr class=\"year\">
+                <th class=\"yearHead\">
+        ";
         if ($start - $end == 0)
         {
-            echo "</th>";
+            echo "
+                    &nbsp;
+                </th>
+            ";
         }
         else
         {
             echo $start . "-" . $end;
-            echo "</th>";
+            echo "
+                </th>
+            ";
 
             for ($y=$start; $y<=$end; $y++)
             {
-                echo "<td colspan=\"12\" class=\"year\">$y</td>";
+                echo "
+                    <td colspan=\"12\" class=\"year\">$y</td>
+                ";
             }
-            echo "
-            </tr>
-            ";
         }
+        echo "
+                </tr>
+        ";
     }
 
     function tagCloud()
@@ -627,19 +740,45 @@
 
     function footer()
     {
-        global $totalTime, $troveTime, $troveSearches, $tags;
+        global $totalTime, $troveTime, $troveSearches, $tags, $queryStrings;
 
         echo "
             <footer>
                 <div class=\"footer\">
                     <span
                         class=\"footer\"
+        ";
+        if (count($queryStrings) == 0)
+        {
+            echo "
+                         >
+                        &nbsp;
+            ";
+        }
+        else
+        {
+
+            echo"
                         title=\"" . $troveSearches . " Trove searches (" . $troveTime . " seconds)\"
-                        >" .
-                            count($tags) . " tags
+                        >
+            ";
+            echo        count($tags) . " tags";
+        }
+        echo "
                     </span>
                     <div class=\"footer-left\">
-                        Search Completed: " . date("g:ia") . "<br/>" . date("l j F Y") . "
+        ";
+        if (count($queryStrings) == 0)
+        {
+            echo "
+                        &nbsp;
+            ";
+        }
+        else
+        {
+            echo "Search Completed: " . date("g:ia") . "<br/>" . date("l j F Y");
+        }
+        echo "
                     </div>
                     <div class=\"footer-right\">
                         <span class=\"footer\">
@@ -687,29 +826,33 @@
         print("<br/>" . count($displayStrings) . "<br/>");
     }
 
-        // if there are no query tags, display an input form only
-        if (count($queryStrings) == 0)
-        {
-            displayBlankForm();
-        }
-        else
-        {
-            getArticles(initialTroveQuery());
-	        processArticles();
-            $columns=(($endYear - $startYear) + 1) * 12;
+    echo "
+            <div class=\"timeline\">
+        ";
 
-            if (DEBUG)
+    // if there are no query tags, display an input form only
+    if (count($queryStrings) == 0)
+    {
+        displayBlankForm();
+    }
+    else
+    {
+        getArticles(initialTroveQuery());
+        processArticles();
+        $columns=(($endYear - $startYear) + 1) * 12;
+
+        if (DEBUG)
+        {
+            print("Tags" . "<br/>");
+            foreach ($tags as $t => $t_value)
             {
-                print("Tags" . "<br/>");
-                foreach ($tags as $t => $t_value)
-                {
-                    print($t . ": ");
-                    print_r ($t_value);
-                    print("<br/>");
-                }
-                print(count($tags) . "<br/>");
+                print($t . ": ");
+                print_r ($t_value);
+                print("<br/>");
             }
+            print(count($tags) . "<br/>");
         }
+
 
         if (DEBUG) {print("get tag max/min - " . count($articles) . " entries in articles<br/>"); }
 
@@ -757,176 +900,130 @@
 
         //    echo $startYear . "-" . $endYear . " (" . $columns . ")<br/>";
 
-        echo "
-            <div class=\"Timeline\">
-        ";
-            formHeader();
-        echo "
-            <table class=\"timelineTable\">
-        ";
-
-//        blankRow($blankRowArray);
+        formHeader();
         yearRow($startYear, $endYear);
-//        blankRow($blankRowArray);
 
-        // if only 1 query string, we don't need a summary line
-        $startRow=0;
-//        if (count($queryStrings) == 1)
-//        {
-//            $startRow=1;
-//        }
 
         if (DEBUG) {print "count(\$articles) " . count($articles) . "<br/>";}
 
-        for ($d=$startRow; $d<count($articles); $d++)
-	    {
-		    $rowArray=$blankRowArray;
-		    $rowArray[0][LABEL]=$articles[$d][0];
+        for ($d=0; $d<count($articles); $d++)
+        {
+            $rowArray=$blankRowArray;
+            $rowArray[0][LABEL]=$articles[$d][0];
             $rowArray[0][ARTICLE_COUNT]=count($articles[$d])-1;
             $tagType=$tags[strtolower($articles[$d][0])][2];
 
             if (DEBUG) {print "count(\$articles\[" . $d . "] " . count($articles[$d]) . "<br/>";}
 
 
-		    for ($a=1; $a < count($articles[$d]); $a++)
-		    {
-			    $article=$articles[$d][$a];
-			    $fullDate="";
-			    $heading="";
+            for ($a=1; $a < count($articles[$d]); $a++)
+            {
+                $article=$articles[$d][$a];
+                $fullDate="";
+                $heading="";
                 $url="";
 
                 for ($c=0; $c<$article->childNodes->length; $c++)
-			    {
-				    $node=$article->childNodes->item($c);
-				    if ($node->nodeName == "date")
-				    {
-					    $fullDate=$node->nodeValue;
-				    }
-				    if ($node->nodeName == "heading")
-				    {
-					    $heading=$node->nodeValue;
-				    }
-				    if ($node->nodeName == "troveUrl")
-				    {
-					    $url=$node->nodeValue;
-				    }
-			    }
-			    if ($fullDate <> "")
-			    {
-				    $year=substr($fullDate,0,4);
-				    $month=substr($fullDate,5,2);
-				    $col=(($year - $startYear) * 12) + $month;
+                {
+                    $node=$article->childNodes->item($c);
+                    if ($node->nodeName == "date")
+                    {
+                        $fullDate=$node->nodeValue;
+                    }
+                    if ($node->nodeName == "heading")
+                    {
+                        $heading=$node->nodeValue;
+                    }
+                    if ($node->nodeName == "troveUrl")
+                    {
+                        $url=$node->nodeValue;
+                    }
+                }
+                if ($fullDate <> "")
+                {
+                    $year=substr($fullDate,0,4);
+                    $month=substr($fullDate,5,2);
+                    $col=(($year - $startYear) * 12) + $month;
                     $rowArray[$col][URL]=$url;
                     $rowArray[$col][ARTICLE_COUNT]++;
-				    if ($rowArray[$col][LABEL] <> "")
-				    {
-					    $rowArray[$col][LABEL].="\n";
+                    if ($rowArray[$col][LABEL] <> "")
+                    {
+                        $rowArray[$col][LABEL].="\n";
                         $rowArray[$col][URL]="";
-				    }
+                    }
                     // clean up any characters that will be a problem as an attribute value
                     $heading=str_replace('"', '``', $heading);
                     $heading=str_replace("'", "`", $heading);
 
                     $rowArray[$col][LABEL].=$fullDate . ", " . $heading;
-			    }
-		    }
+                }
+            }
 
             if ($d==1)
             {
-                echo "
-                    <tr class=\"groupHeader\">
-                        <th class=\"headcol\">
-                            <div class=\"groupHeader\">
-                                Search Tags
-                            </div>
-                            <div class=\"headerInfo\">
-                                <a
-                                    class=\"grouopHeader\"
-                                    title=\"These are the terms that are used to search Trove. \nTerms are cumulative (logical OR); items that match any of the Search Tags will be returned\">
-                                    i
-                                </a>
-                            </div>
-                        </th>
-                        <td colspan=\"" . $columns . "\">&nbsp;</td>
-                    </tr>
-                ";
+                searchTagHeader();
             }
 
+            // when we have displayed all the query tags, add a blank input then display all the other tags
             if ($d == count($queryStrings)+1)
             {
-                echo "
-                    <tr class=\"groupHeader\">
-                        <th class=\"headcol\">
-                            <div class=\"groupHeader\">
-                                Display Tags
-                            </div>
-                            <div class=\"headerInfo\">
-                                <a
-                                    class=\"groupHeader\"
-                                    title=\"These are tags found in the items returned from the Trove search.  \nAdd tags to this list from the tag cloud \"
-                                    >
-                                    i
-                                </a>
-                            </div>
-                        </th>
-                        <td colspan=\"" . $columns . "\">&nbsp;</td>
-                    </tr>
-                ";
+                blankInput();
+                displayTagHeader();
             }
 
-            if ($rowArray[0][ARTICLE_COUNT] > 0)
+            if ($tagType == TAG_QUERY || $rowArray[0][ARTICLE_COUNT] > 0)
             {
-		        echo "
-		            <tr class=\"results\"
-                        id=\"display$d\"
-                ";
+                echo "
+		        <tr class=\"results\"
+                    id=\"display$d\"
+            ";
                 if ($tagType == TAG_OTHER)
                 {
                     echo "style=\"display: none;\"";
                 }
 
                 echo "
-                    >
-		                <th class=\"headcol\"
-                ";
+                >
+		            <th class=\"headcol\"
+            ";
                 if ($tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
                 {
                     echo "
-                            onmouseover=\"document.getElementById('hideResults$d').style.visibility='visible'\"
-                            onmouseout=\"document.getElementById('hideResults$d').style.visibility='hidden'\"
-                    ";
+                        onmouseover=\"document.getElementById('hideResults$d').style.visibility='visible'\"
+                        onmouseout=\"document.getElementById('hideResults$d').style.visibility='hidden'\"
+                ";
                 }
 
                 echo "
-                        >
+                    >
                 ";
 
                 $style="query-event";
                 if ($tagType == TAG_QUERY)
                 {
-                    echo  "<input type=\"text\" name=\"search[]\" value=\"" . $rowArray[0][LABEL] . "\"/>";
+                    echo  QUERY_INPUT . " value=\"" . $rowArray[0][LABEL] . "\"/>";
                 }
                 else
                 {
-                    $style="display-event";
+                    $style="summary-event";
                     // if not query tag, then all other rows are display tags, except the summary row ($d==0)
                     if ($d > 0)
                     {
-                        $style="summary-event";
+                        $style="display-event";
                         echo "
-                            <span
-                                class=\"hideDisplayResults\"
-                                id=\"hideResults$d\"
-                                title=\"Remove\"
-                                onclick=\"document.getElementById('display$d').style.display='none';\"
-                            >
-                            x
-                            </span>
-                        ";
+                        <span
+                            class=\"hideDisplayResults\"
+                            id=\"hideResults$d\"
+                            title=\"Remove\"
+                            onclick=\"document.getElementById('display$d').style.display='none';\"
+                        >
+                        x
+                        </span>
+                    ";
                     }
                     echo "
-                        <span class=\"displayHeader\">" . $rowArray[0][LABEL] . "</span>
-                    ";
+                    <span class=\"displayHeader\">" . $rowArray[0][LABEL] . "</span>
+                ";
                 }
 
                 // Show number of articles to the right of the header, with a link to Trove to retrieve the articles.
@@ -950,19 +1047,20 @@
                             target=\"blank\"
                                 title=\"" . $rowArray[0][ARTICLE_COUNT] . " items found.  Click to retrieve Trove items.\"
                         >" .
-                            $rowArray[0][ARTICLE_COUNT] . "
+                    $rowArray[0][ARTICLE_COUNT] . "
                         </a>
                     </div>
                 ";
 
                 echo "</th>";
-		        outputRow($rowArray, $style);
-		        echo "
+                outputRow($rowArray, $style);
+                echo "
 		            </tr>
 	            ";
-    	    }
+            }
         }
 
+        searchButton();
 
         echo "
                 </table>
@@ -970,12 +1068,16 @@
         </div>
         ";
 
-        $totalTime=time() - $startTime;
+            $totalTime=time() - $startTime;
 
-        tagCloud();
+            tagCloud();
+    }
 
-        footer();
+//    echo "
+//        </div>
+//    ";
 
+    footer();
     ?>
 
 </body>

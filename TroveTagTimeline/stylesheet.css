@@ -16,8 +16,8 @@ table {
     width: 100%;
 }
 
-.Timeline {
-    margin-left: 300px;
+.timeline {
+    margin-left: 301px;
     padding: 0;
     overflow: auto;
     resize: vertical;
@@ -50,8 +50,8 @@ div.groupHeader {
 .yearHead,
 .headcol {
     position: absolute;
-    min-width: 298px;
-    max-width: 298px;
+    min-width: 290px;
+    max-width: 290px;
     left: 0;
     top: auto;
     text-align: left;
@@ -106,6 +106,12 @@ span.hideDisplayResults {
     height: 30px;
     padding-top: 5px;    
 }
+.submit
+{
+    height:30px;
+    padding-top: 12px;
+}
+
 
 td,
 .summary-event,
@@ -357,5 +363,19 @@ div.tagCloud {
 }
 
 .info {
-    padding: 10px 10px 10px 10px;
+    padding: 10px 10px 10px 0;
+    font-family: 'Times New Roman';
+    font-size: 12px;
+}
+
+td.info {
+    padding: 0 10px 2px 0;
+    width: auto;
+    max-width: none;
+    min-width: unset;
+    vertical-align: top;
+    text-align: left;
+}
+.italics{
+    text-
 }
