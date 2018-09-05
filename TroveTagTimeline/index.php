@@ -133,6 +133,7 @@
     {
         echo "
             <div class=\"year\" style=\"position:absolute; left:0;width:100%;\">&nbsp;</div>
+
             <div class=\"form\" name=\"queryTags\" style=\"margin-top:6px;\">
         ";
 
@@ -171,12 +172,13 @@
                         <tr>
                             <td class=\"info\">Examples:</td>
                             <td class=\"info\"><strong>Lade Vale NSW 2581</strong></td>
-                            <td class=\"info\">will display a number of exactly matching results</td>
+                            <td class=\"info\" style=\"white-space: normal;\">will display a number of exactly matching results</td>
                         </tr>
                         <tr>
                             <td class=\"info\">&nbsp;</td>
                             <td class=\"info\"><strong>NSW 2581</strong></td>
-                            <td class=\"info\">is unlikely to return any exactly matching results, but will return a number of results with tags that include 'NSW 2581'
+                            <td class=\"info\" style=\"white-space: normal;\">
+                                is unlikely to return any exactly matching results, but will return a number of results with tags that include 'NSW 2581'
                                 <br/>
                                 These results will be displayed in the summary row.
                             </td>

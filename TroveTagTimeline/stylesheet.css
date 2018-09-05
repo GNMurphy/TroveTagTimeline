@@ -21,6 +21,7 @@ table {
     padding: 0;
     overflow: auto;
     resize: vertical;
+    display: flex;
 }
 
 .timelineTable {
@@ -376,6 +377,4 @@ td.info {
     vertical-align: top;
     text-align: left;
 }
-.italics{
-    text-
-}
+
