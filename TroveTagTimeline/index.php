@@ -91,7 +91,7 @@
                 i.focus();
 
                 // add a hidden element to store the original value so we can detect changes
-                var s = document.createdElement('span');
+                var s = document.createElement('span');
                 s.setAttribute('display', 'hidden');
                 s.value = i.value;
 
@@ -102,10 +102,34 @@
         {
 
         }
+        function formatDate(date) {
+            var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            var months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            return days[date.getDay()] + " " + date.getDate() + " " + months[date.getMonth() - 1] + " " + date.getFullYear();                   
+        }
+        function formatTime(date) {
+            var h = date.getHours();
+            var m = date.getMinutes();
+
+            var A = "PM";
+            if (h < 12) {
+                A = "AM";
+            }
+            else {
+                h = h - 12;
+            }
+            if (h == 0) { h = 12; }
+
+            var mm = m.toString();
+            if (m < 10) { mm = "0" + m; }
+
+            return h + ":" + mm + " " + A;
+        }
     </script>
 </head>
 
-<body onload="document.getElementById('input1').focus();">
+<body>
     <div class="pageHeader">
         <h1>Trove Tag Timeline</h1>
     </div>
@@ -187,7 +211,7 @@
                     </table>
             </div>
             <script>
-                document.getElementById('input1').focus();
+                document.getElementById(\"input1\").focus();
             </script>
         </div>
         ";
@@ -779,7 +803,16 @@
         }
         else
         {
-            echo "Search Completed: " . date("g:ia") . "<br/>" . date("l j F Y");
+            echo "Search Completed: <span id=\"searchTime\"></span><br/><span id=\"searchDate\"></span>";
+            echo "
+                        <script>
+                            {
+                                var d=new Date(\"" . gmdate('j F Y h:i:s A') . " UTC\");
+                                document.getElementById('searchTime').innerHTML=formatTime(d);
+                                document.getElementById('searchDate').innerHTML=formatDate(d);
+                            }
+                        </script>
+            ";
         }
         echo "
                     </div>
