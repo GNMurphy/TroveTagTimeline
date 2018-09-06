@@ -20,7 +20,6 @@ table {
     margin-left: 301px;
     padding: 0;
     overflow: auto;
-    resize: vertical;
     display: flex;
 }
 
@@ -86,12 +85,12 @@ span.hideDisplayResults {
 .yearHead, .year {
     color: white;
     background: #305496;
+    height: 20px;
 }
 
 .year {
     text-align: center;
     font-weight: bold;
-    height: 12pt;
 }
 
 .searchTerm,
@@ -110,7 +109,8 @@ span.hideDisplayResults {
 .submit
 {
     height:30px;
-    padding-top: 12px;
+    padding-top: 14px;
+    z-index: 1;
 }
 
 
@@ -196,7 +196,13 @@ tr {
     text-align: center;
 }
 
+footer,
 .footer-left,
+.footer-right {
+    z-index: 1;
+}
+
+.footer-left, 
 .footer-right {
     width: 15%;
     min-width: 300px;
@@ -217,24 +223,28 @@ tr {
     background-color: blueviolet;
     color: white;
     width:100%;
+    z-index: 2;
 }
 
 .tagCloudHeader_left,
 .tagCloudButton_left{
     float: left;
     text-align: left;
+    z-index: 2;
 }
 
 .tagCloudHeader_right,
 .tagCloudButton_right {
     float: right;
     text-align: right;
+    z-index: 2;
 }
 
 .tagCloudButton_left,
 .tagCloudButton_right {
     padding: 0 5px 0 5px;
     vertical-align: middle;
+    z-index: 2;
 }
 
 #showTagCloud_button {
@@ -330,10 +340,9 @@ div.tagCloud {
 }
 
 .form {
-    float: left;
     max-width: 290px;
     min-width: 290px;
-    padding: 10px 10px 10px 10px;
+    padding: 20px 10px 10px 10px;
     background: linear-gradient(to right, #c5d3ed, white);
 }
 

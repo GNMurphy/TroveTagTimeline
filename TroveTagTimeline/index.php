@@ -159,7 +159,7 @@
             <div class=\"year\" style=\"position:absolute; left:0;width:100%;\">&nbsp;</div>
             <div class=\"timeline\" style=\"margin-left: 0;\">
 
-            <div class=\"form\" name=\"queryTags\" style=\"margin-top:6px; background:linear-gradient(to right, #c5d3ed, white);\">
+            <div class=\"form\" name=\"queryTags\" style=\"margin-top:6px; \">
         ";
 
         formHeader();
@@ -190,7 +190,7 @@
                     </table>
                 </form>
             </div>
-            <div class=\"info\" style=\"vertical-align:middle;padding:20px 0 20px 0;\" >
+            <div class=\"info\" style=\"vertical-align:middle;padding:20px 0 10px 10px;\" >
                 <div class=\"info\">Enter one or more search terms into the Search Tag fields. (Additional fields will display when the existing ones are used.)</div>
                 <div class=\"info\">All results will be shown on the top 'Summary' row.  Exact matches will be displayed against each tag.</div>
                     <table class=\"info\" style=\"border: none;\">
@@ -203,7 +203,7 @@
                             <td class=\"info\">&nbsp;</td>
                             <td class=\"info\"><strong>NSW 2581</strong></td>
                             <td class=\"info\" style=\"white-space: normal;\">
-                                is unlikely to return any exactly matching results, but will return a number of results with tags that include 'NSW&nbsp;2581'
+                                is unlikely to return any exact matches, but will return a number of results with tags that include 'NSW&nbsp;2581'
                                 <br/>
                                 These results will be displayed in the summary row.
                             </td>
@@ -227,7 +227,6 @@
                         </tr>
         ";
     }
-
 
     function formHeader()
     {
@@ -595,12 +594,6 @@
 		";
 		outputRow($rowArray, "filler");
 		echo "</tr>";
-    }
-
-    function newFormRow($rowArray, $entryType)
-    {
-
-            echo "<tr class=\"groupHeader\"><th class=\"headcol\">Display Tags</th><td colspan=\"" . $columns . "\">&nbsp;</td></tr>";
     }
 
     function outputRow($rowArray, $class)
