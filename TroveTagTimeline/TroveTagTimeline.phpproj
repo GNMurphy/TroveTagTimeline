@@ -21,6 +21,7 @@
     <Compile Include="index.php" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="i-circled.png" />
     <Content Include="stylesheet.css" />
   </ItemGroup>
 </Project>

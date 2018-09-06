@@ -243,6 +243,7 @@
         $c=$columns;
         if ($c ==0) {$c=1;}
 
+//                                    class=\"groupHeader\"
         echo "
                     <tr class=\"groupHeader\">
                         <th class=\"headcol\">
@@ -250,11 +251,11 @@
                                 Search Tags
                             </div>
                             <div class=\"headerInfo\">
-                                <a
-                                    class=\"groupHeader\"
-                                    title=\"These are the terms that are used to search Trove. \nTerms are cumulative (logical OR); items that match any of the Search Tags will be returned\">
-                                    i
-                                </a>
+                                <img
+                                    class=\"headerInfo\"
+                                    src=\"i-circled.png\"
+                                    title=\"These are the terms that are used to search Trove. \nTerms are cumulative (logical OR); items that match any of the Search Tags will be returned\"
+                                />
                             </div>
                         </th>
                         <td colspan=\"" . $c . "\">&nbsp;</td>
@@ -275,12 +276,11 @@
                                 Display Tags
                             </div>
                             <div class=\"headerInfo\">
-                                <a
-                                    class=\"groupHeader\"
+                                <img
+                                    class=\"headerInfo\"
+                                    src=\"i-circled.png\"
                                     title=\"These are tags found in the items returned from the Trove search.  \nAdd tags to this list from the tag cloud \"
-                                    >
-                                    i
-                                </a>
+                                />
                             </div>
                         </th>
                         <td colspan=\"" . $c . "\">&nbsp;</td>
@@ -743,7 +743,7 @@
                         echo "
                             <span
                                 class=\"$classId\"
-                                title=\"" . $count . " items.\nClick to show on timeline.\"
+                                title=\"$count items.\nClick to show on timeline.\"
                                 onclick=\"showDisplayTag('$displayId')\"
                             >
                         ";
@@ -1074,7 +1074,17 @@
                         <a
                             href=\"https://trove.nla.gov.au/result?q=" . urlencode($q) . "\"
                             target=\"blank\"
-                                title=\"" . $rowArray[0][ARTICLE_COUNT] . " items found.  Click to retrieve Trove items.\"
+                                title=\"
+                ";
+                if ($rowArray[0][ARTICLE_COUNT] > 0) {
+                    echo $rowArray[0][ARTICLE_COUNT] . " items.\nClick to show on timeline.";
+                }
+                else
+                {
+                    echo "No exact matches found. Items with tags containing this search term are shown in the summary line.  <br/>Select tags from the Tag Cloud to view related items in Display Tags";
+                }
+                echo "
+                                \"
                         >" .
                     $rowArray[0][ARTICLE_COUNT] . "
                         </a>
