@@ -19,7 +19,8 @@ table {
 .timeline {
     margin-left: 301px;
     padding: 0;
-    overflow: auto;
+    overflow-x: scroll;
+    overflow-y: auto;
     display: flex;
 }
 
