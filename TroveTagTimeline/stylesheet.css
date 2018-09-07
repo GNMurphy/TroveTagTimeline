@@ -44,14 +44,10 @@ div.groupHeader {
     float: left;
     width: 240px;
 }
-
+.submit,
 .groupHeader,
 .headerInfo {
     height: 30px;
-}
-
-.submit {
-    height: 20px;
 }
 
 .groupHeader {
@@ -61,7 +57,7 @@ div.groupHeader {
 }
 
 .submit {
-    padding-top: 5px;
+    padding-top: 10px;
 }
 
 .headerInfo {
