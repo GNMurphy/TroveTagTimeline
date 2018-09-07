@@ -454,13 +454,14 @@
 
         global $queryStrings, $baseQuery;
 
-        $queryString = PUBLICTAG . QUOTES . $queryStrings[0] . QUOTES ;
+        $baseQuery = PUBLICTAG . QUOTES . $queryStrings[0] . QUOTES ;
 		for ($q=1; $q<count($queryStrings); $q++)
 		{
-		    	$queryString.=" OR " . PUBLICTAG . QUOTES . $queryStrings[$q] . QUOTES;
+		    	$baseQuery.=" OR " . PUBLICTAG . QUOTES . $queryStrings[$q] . QUOTES;
 		}
 
-	    $troveQ=urlencode($queryString);
+
+	    $troveQ=urlencode($baseQuery);
 
         if (DEBUG) { print time() . " end initialTroveQuery<br/>"; }
 
@@ -611,16 +612,26 @@
                     >
                 ";
 
-                if ($rowArray[$c][ARTICLE_COUNT] > 0)
+                if ($rowArray[$c][URL] != "")
                 {
     				echo "
                         <a
                             href=\"" . $rowArray[$c][URL] . "\"
                             target=\"_blank\"
                         >
+                    ";
+                }
+                if ($rowArray[$c][ARTICLE_COUNT] > 0)
+                {
+                    echo "
                             <span class=\"" . $class . "\">
                                 .
                             </span>
+                    ";
+                }
+                if ($rowArray[$c][URL] != "")
+                {
+                    echo "
                         </a>
                     ";
                 }
@@ -945,7 +956,20 @@
             $rowArray=$blankRowArray;
             $rowArray[0][LABEL]=$articles[$d][0];
             $rowArray[0][ARTICLE_COUNT]=count($articles[$d])-1;
+
             $tagType=$tags[strtolower($articles[$d][0])][2];
+
+            $q=$baseQuery;
+            if( $tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
+            {
+                $q = "(" . $q . ") AND " . PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
+            }
+            if( $tagType == TAG_QUERY)
+            {
+                $q = PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
+            }
+
+            $rowArray[0][URL]="https://trove.nla.gov.au/result?q=" . urlencode($q);
 
             if (DEBUG) {print "count(\$articles\[" . $d . "] " . count($articles[$d]) . "<br/>";}
 
@@ -971,6 +995,9 @@
                     if ($node->nodeName == "troveUrl")
                     {
                         $url=$node->nodeValue;
+                        if (strpos($url,"?")) {
+                            $url = substr($url, 0, strpos($url,"?"));
+                        }
                     }
                 }
                 if ($fullDate <> "")
@@ -980,10 +1007,10 @@
                     $col=(($year - $startYear) * 12) + $month;
                     $rowArray[$col][URL]=$url;
                     $rowArray[$col][ARTICLE_COUNT]++;
-                    if ($rowArray[$col][LABEL] <> "")
+                    if ($rowArray[$col][ARTICLE_COUNT] > 1)
                     {
                         $rowArray[$col][LABEL].="\n";
-                        $rowArray[$col][URL]="";
+                        $rowArray[$col][URL]=$rowArray[0][URL] . "&l-year=" . $year;
                     }
                     // clean up any characters that will be a problem as an attribute value
                     $heading=str_replace('"', '``', $heading);
@@ -1064,20 +1091,21 @@
                 // The summary line ($d==0) uses the same query string as the original search ($baseQuery), query tag lines use the query tag only,base
                 // and display lines use $baseQuery AND queryTag.
 
-                $q=$baseQuery;
-                if( $tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
-                {
-                    $q = "(" . $q . ") AND " . PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
-                }
-                if( $tagType == TAG_QUERY)
-                {
-                    $q = PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
-                }
+//                $q=$baseQuery;
+//                if( $tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
+//                {
+//                    $q = "(" . $q . ") AND " . PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
+//                }
+//                if( $tagType == TAG_QUERY)
+//                {
+//                    $q = PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
+///                }
+                //                            href=\"https://trove.nla.gov.au/result?q=" . urlencode($q) . "\"
 
                 echo "
                     <div class=\"headerInfo\">
                         <a
-                            href=\"https://trove.nla.gov.au/result?q=" . urlencode($q) . "\"
+                            href=\"" . $rowArray[0][URL] . "\"
                             target=\"blank\"
                                 title=\"
                 ";
