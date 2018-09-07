@@ -16,13 +16,18 @@ table {
     width: 100%;
 }
 
-.timeline {
-    margin-left: 301px;
+.timelineBase {
+    margin: 0;
     padding: 0;
-    overflow-x: scroll;
-    overflow-y: auto;
     display: flex;
 }
+/*    margin-left: 301px;
+*/
+.timeline {
+    padding: 0;
+    overflow: auto;
+}
+
 
 .timelineTable {
     border-collapse: collapse;
@@ -41,9 +46,12 @@ div.groupHeader {
 }
 
 .groupHeader,
-.headerInfo,
-.submit {
+.headerInfo {
     height: 30px;
+}
+
+.submit {
+    height: 20px;
 }
 
 .groupHeader {
@@ -53,8 +61,7 @@ div.groupHeader {
 }
 
 .submit {
-    padding-top: 14px;
-    z-index: 1;
+    padding-top: 5px;
 }
 
 .headerInfo {
@@ -66,6 +73,7 @@ div.groupHeader {
 
 img.headerInfo {
     padding-top: 10px;
+    padding-right: 0;
     display: block;
     height: 15px;
     width: 15px;
@@ -350,10 +358,12 @@ div.tagCloud {
 }
 
 .form {
+    float: left;
     max-width: 290px;
     min-width: 290px;
-    padding: 20px 10px 10px 10px;
     background: linear-gradient(to right, #c5d3ed, white);
+    overflow: visible;
+    padding: 20px 0 0 10px;
 }
 
 .info {

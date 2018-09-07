@@ -155,11 +155,13 @@
 
     function displayBlankForm()
     {
+        //position:absolute; left:0;
+        // style=\"margin-top:6px; \"
         echo "
-            <div class=\"year\" style=\"position:absolute; left:0;width:100%;\">&nbsp;</div>
-            <div class=\"timeline\" style=\"margin-left: 0;\">
+            <div class=\"year\" style=\"width:100%;\">&nbsp;</div>
+            <div class=\"timelineBase\">
 
-            <div class=\"form\" name=\"queryTags\" style=\"margin-top:6px; \">
+            <div class=\"form\">
         ";
 
         formHeader();
@@ -190,7 +192,7 @@
                     </table>
                 </form>
             </div>
-            <div class=\"info\" style=\"vertical-align:middle;padding:20px 0 10px 10px;\" >
+            <div class=\"info\" style=\"vertical-align:middle;padding:10px 0 10px 20px;\" >
                 <div class=\"info\">Enter one or more search terms into the Search Tag fields. (Additional fields will display when the existing ones are used.)</div>
                 <div class=\"info\">All results will be shown on the top 'Summary' row.  Exact matches will be displayed against each tag.</div>
                     <table class=\"info\" style=\"border: none;\">
@@ -925,9 +927,12 @@
         }
 
         //    echo $startYear . "-" . $endYear . " (" . $columns . ")<br/>";
-
+        //            <div class=\"timelineBase\">
+        //style=\"position: absolute; left: 0; z-index: -1;\"
         echo "
-            <div class=\"timeline\">
+            <div class=\"timelineBase\">
+                <div class=\"form\" style=\"z-index: -1;\" >&nbsp;</div>
+                    <div class=\"timeline\">
         ";
         formHeader();
         yearRow($startYear, $endYear);
@@ -1102,8 +1107,9 @@
         searchButton();
 
         echo "
-                </table>
-            </form>
+                    </table>
+                </form>
+            </div>
         </div>
         ";
 
