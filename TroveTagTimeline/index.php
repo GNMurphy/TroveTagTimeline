@@ -140,6 +140,7 @@
         // constants
         define(DEBUG, FALSE);
         define(PUBLICTAG, "publictag:");
+        define(MAX_ARTICLES,1000);
         define(QUOTES, "\"");
         define(TAG_QUERY, 'q');
         define(TAG_DISPLAY, 'd');
@@ -155,12 +156,19 @@
         define(QUERY_INPUT, '<input type="text" name="searchTag[]" onchange="addQueryInput()" autocomplete="off" ');
 
 
-    function displayBlankForm()
+    function displayBlankForm($message)
     {
         //position:absolute; left:0;
         // style=\"margin-top:6px; \"
+        if ($message != "")
+        {
+            echo "<div class=\"alert\">$message</div>";
+        }
+        else
+        {
+            echo "<div class=\"year\" style=\"width:100%;\">&nbsp;</div>";
+        }
         echo "
-            <div class=\"year\" style=\"width:100%;\">&nbsp;</div>
             <div class=\"timelineBase\">
 
             <div class=\"form\">
@@ -272,7 +280,7 @@
 
     function displayTagHeader()
     {
-        global $columns;
+        global $columns, $miscTagThreshold;
         $c=$columns;
         if ($c ==0) {$c=1;}
 
@@ -286,7 +294,9 @@
                                 <img
                                     class=\"headerInfo\"
                                     src=\"i-circled.png\"
-                                    title=\"These are tags found in the items returned from the Trove search.  \nAdd tags to this list from the tag cloud \"
+                                    title=\"These are tags found in the items returned from the Trove search.\n" .
+                                            "Up to 200 tags are displayed, the remainder (appearing in " . $miscTagThreshold . " or less articles) are grouped as " . TAG_MISC . ".\n" .
+                                            "Add tags to this list from the tag cloud \"
                                 />
                             </div>
                         </th>
@@ -491,6 +501,7 @@
   		$troveXML->load(TROVE_URL . $troveQueryString . "&key=" . $troveKey);
         $troveTime += time()-$troveStart;
         $troveSearches++;
+        $totalArticles=0;
 
 
         $x=$troveXML->documentElement;
@@ -498,52 +509,69 @@
 		    if ($x->hasChildNodes())
 		    {
                 if(DEBUG) {print(time() . " processing articles");}
-			      // process the articles
-                  // add each article to the article array, and find the earlist and latest year
-                foreach ($x->getElementsByTagName("article") as $article)
+
+                // calculate the total number of records returned.
+                // if it is too big, we can't progress
+
+                foreach ($x->getElementsByTagName("records") as $records)
 			    {
-				    array_push($articles[0],$article);
-                    foreach ($article->childNodes as $articleNode)
+				    $t = $records->attributes->getNamedItem("total");
+                    if (isset($t))
 				    {
-                        //$articleNode = $article[$c];
-                        //echo $articleNode->nodeName;
-                        if ($articleNode->nodeName == "date")
-					    {
-						    $date=$articleNode->nodeValue;
-                            //echo $date;
-						    if (!isSet($startYear) || $startYear==0 || substr($date,0,4) < $startYear)
-						    {
-							    $startYear=substr($date,0,4);
-						    }
-						    if (!isSet($endYear) || substr($date,0,4) > $endYear)
-						    {
-							    $endYear=substr($date,0,4);
-						    }
-                            //echo "(" . $startYear . "-" . $endYear . ")";
-					    }
+					    $totalArticles+=$t->nodeValue;
 				    }
 			    }
 
-			    // look for any zone that have more articles to retrieve
-                foreach ($x->getElementsByTagName("records") as $records)
-			    {
-				    $next = $records->attributes->getNamedItem("next");
-                    if (isset($next))
-				    {
-					    getArticles($next->nodeValue);
-				    }
-			    }
+                if ($totalArticles <= MAX_ARTICLES)
+                {
+                    // process the articles
+                    // add each article to the article array, and find the earlist and latest year
+                    foreach ($x->getElementsByTagName("article") as $article)
+                    {
+                        array_push($articles[0],$article);
+                        foreach ($article->childNodes as $articleNode)
+                        {
+                            //$articleNode = $article[$c];
+                            //echo $articleNode->nodeName;
+                            if ($articleNode->nodeName == "date")
+                            {
+                                $date=$articleNode->nodeValue;
+                                //echo $date;
+                                if (!isSet($startYear) || $startYear==0 || substr($date,0,4) < $startYear)
+                                {
+                                    $startYear=substr($date,0,4);
+                                }
+                                if (!isSet($endYear) || substr($date,0,4) > $endYear)
+                                {
+                                    $endYear=substr($date,0,4);
+                                }
+                                //echo "(" . $startYear . "-" . $endYear . ")";
+                            }
+                        }
+                    }
+
+                    // look for any zone that have more articles to retrieve
+                    foreach ($x->getElementsByTagName("records") as $records)
+                    {
+                        $next = $records->attributes->getNamedItem("next");
+                        if (isset($next))
+                        {
+                            getArticles($next->nodeValue);
+                        }
+                    }
+                }
 		    }
         }
 
         if (DEBUG) { print time() . " end getArticles<br/>"; }
+        return $totalArticles;
     }
 
     function processArticles()
 	{
         if (DEBUG) { print time() . " start processArticles<br/>"; }
 
-		global $articles, $tags, $miscTagThreshold, $displayStrings;
+		global $articles, $tags, $miscTagThreshold, $displayStrings, $tagMaxMin;
 
         //  $articles:  an array of article objects retrieved from Trove
         //                  first row is all articles
@@ -597,11 +625,11 @@
         // By doing this, we don't need a seperate row for these tags and and don't need to include the tags in the tag cloud,
         // significantly reducing the size of the html.
 
-        if (count($tags) > TAG_THRESHOLD)
-        {
-            // calculate $miscTagThreshold and $tagMaxMin
-            tagStats();
+        // calculate $miscTagThreshold and $tagMaxMin
+        tagStats();
 
+        if ($miscTagThreshold > 0 )
+        {
             // add the tag to $tags
             insertTag(TAG_MISC, TAG_DISPLAY);
             // create the $articles node
@@ -787,38 +815,52 @@
 
         global $tags, $tagMaxMin, $articles, $miscTagThreshold;
 
-        $headerToolTip1 = "Word cloud showing tags found in the search results. \nTags that are associated with only 1 item are not shown; articles for these tags are displayed on the Miscellaneous Tags line";
-        $headerToolTip2 = "Word cloud showing tags found in the search results. \nTags that are associated with only 1 item are not shown initially; click the chevron to the left to show/hide theses tags";
+        $headerToolTip = "Word cloud showing tags found in the search results.";
+        $headerToolTip1 = "\nTags that are associated with only 1 item are not shown; articles for these tags are displayed on the Miscellaneous Tags line";
+        $headerToolTip2 = "\nTags that are associated with " . $miscTagThreshold . " or less items are not shown initially; click the chevron to the left to show/hide theses tags";
         $showCloudToolTip = 'Show Tag Cloud';
         $hideCloudToolTip = 'Hide Tag Cloud';
-        $showMinorTagsToolTip = 'Show tags that occur in only 1 item';
-        $hideMinorTagsToolTip = 'Hide tags that occur in only 1 item';
+        $showMinorTagsToolTip = "Show tags that occur in ";
+        $hideMinorTagsToolTip = "Hide tags that occur in ";
+        if ($miscTagThreshold == 1)
+        {
+            $showMinorTagsToolTip = $showMinorTagsToolTip . "only 1 item";
+            $hideMinorTagsToolTip = $hideMinorTagsToolTip . "only 1 item";
+        }
+        else
+        {
+            $showMinorTagsToolTip = $showMinorTagsToolTip . $miscTagThreshold . " or less items";
+            $hideMinorTagsToolTip = $hideMinorTagsToolTip . $miscTagThreshold . " or less items";
+        }
 
         //  header
         echo "
             <div class=\"tagCloudHeader\">
-                <span title=\"";
-//        if (count($tags) > TAG_THRESHOLD)
-//        {
-//            echo $headerToolTip1;
-//        }
-//        else
-//        {
-            echo $headerToolTip2;
-//        }
+                <span title=\"" . $headerToolTip;
+        if ($miscTagThreshold > 0)
+        {
+            if ($miscTagThreshold == 1)
+            {
+                echo $headerToolTip1;
+            }
+            else
+            {
+                echo $headerToolTip2;
+            }
+        }
         echo "\">Tags</span>
                 <div class=\"tagCloudHeader_left\">
                     <span
                         class=\"tagCloudButton_left\"
         ";
-//        if (count($tags) > TAG_THRESHOLD)
-//        {
-//            echo "
-//                        >
-//                        &nbsp;
-//            ";
-//        }
-//        else
+        if ($miscTagThreshold == 0)
+        {
+            echo "
+                        >
+                        &nbsp;
+            ";
+        }
+        else
         {
             echo "
                         title=\"" . $showMinorTagsToolTip . "\"
@@ -1030,194 +1072,202 @@
     // if there are no query tags, display an input form only
     if (count($queryStrings) == 0)
     {
-        displayBlankForm();
+        displayBlankForm("");
     }
     else
     {
-        getArticles(initialTroveQuery());
-        processArticles();
-        $columns=(($endYear - $startYear) + 1) * 12;
-
-        if (DEBUG)
+        $total = getArticles(initialTroveQuery());
+        if ($total > MAX_ARTICLES)
         {
-            print("Tags" . "<br/>");
-            foreach ($tags as $t => $t_value)
+            // display blank for mwith message suggesting a narrower search string
+            $message="Your search returned ". $total . " articles.  Refine the search to return fewer articles";
+            displayBlankForm($message);
+        }
+        else
+        {
+            processArticles();
+            $columns=(($endYear - $startYear) + 1) * 12;
+
+            if (DEBUG)
             {
-                print($t . ": ");
-                print_r ($t_value);
-                print("<br/>");
+                print("Tags" . "<br/>");
+                foreach ($tags as $t => $t_value)
+                {
+                    print($t . ": ");
+                    print_r ($t_value);
+                    print("<br/>");
+                }
+                print(count($tags) . "<br/>");
             }
-            print(count($tags) . "<br/>");
-        }
 
 
-        if (DEBUG) {print("get tag max/min - " . count($articles) . " entries in articles<br/>"); }
+            if (DEBUG) {print("get tag max/min - " . count($articles) . " entries in articles<br/>"); }
 
-        // record the max and min of the number of articles for tags, and work out what the threshold is for display tags ($miscTagThreshold)
+            // record the max and min of the number of articles for tags, and work out what the threshold is for display tags ($miscTagThreshold)
 
 
-        if (count($displayStrings) == 0)
-        {
-            $tags[$tagMaxMin[2]][2]=TAG_DISPLAY;
-        }
+            if (count($displayStrings) == 0)
+            {
+                $tags[$tagMaxMin[2]][2]=TAG_DISPLAY;
+            }
 
-        if (DEBUG)
-        { print_r($tagMaxMin . "<br/>"); }
+            if (DEBUG)
+            { print_r($tagMaxMin . "<br/>"); }
 
-        $blankRowArray=array();
-        define(LABEL, 0);
-        define(COLSPAN, 1);
-        define(URL, 2);
-        define(ARTICLE_COUNT, 3);
+            $blankRowArray=array();
+            define(LABEL, 0);
+            define(COLSPAN, 1);
+            define(URL, 2);
+            define(ARTICLE_COUNT, 3);
 
-        for ($x=1;$x<=$columns;$x++)
-        {
-            $blankRowArray[$x][LABEL]="";
-            $blankRowArray[$x][COLSPAN]=1;
-            $blankRowArray[$x][URL]="";
-            $blankRowArray[$x][ARTICLE_COUNT]=0;
-        }
+            for ($x=1;$x<=$columns;$x++)
+            {
+                $blankRowArray[$x][LABEL]="";
+                $blankRowArray[$x][COLSPAN]=1;
+                $blankRowArray[$x][URL]="";
+                $blankRowArray[$x][ARTICLE_COUNT]=0;
+            }
 
-        //    echo $startYear . "-" . $endYear . " (" . $columns . ")<br/>";
-        //            <div class=\"timelineBase\">
-        //style=\"position: absolute; left: 0; z-index: -1;\"
-        echo "
+            //    echo $startYear . "-" . $endYear . " (" . $columns . ")<br/>";
+            //            <div class=\"timelineBase\">
+            //style=\"position: absolute; left: 0; z-index: -1;\"
+            echo "
             <div class=\"timelineBase\">
                 <div class=\"form\" style=\"z-index: -1;\" >&nbsp;</div>
                     <div class=\"timeline\">
         ";
-        formHeader();
-        yearRow($startYear, $endYear);
+            formHeader();
+            yearRow($startYear, $endYear);
 
 
-        if (DEBUG) {print "count(\$articles) " . count($articles) . "<br/>";}
+            if (DEBUG) {print "count(\$articles) " . count($articles) . "<br/>";}
 
-        for ($d=0; $d<count($articles); $d++)
-        {
-            $tagType=$tags[strtolower($articles[$d][0])][2];
-            $count = count($articles[$d])-1;
-
-            // if there are  too many tags, don't show the ones with only fewer articles
-
-            if($tagType == TAG_DISPLAY || $count > $miscTagThreshold)
+            for ($d=0; $d<count($articles); $d++)
             {
-                $rowArray=$blankRowArray;
-                $rowArray[0][LABEL]=$articles[$d][0];
-                $rowArray[0][ARTICLE_COUNT]=count($articles[$d])-1;
+                $tagType=$tags[strtolower($articles[$d][0])][2];
+                $count = count($articles[$d])-1;
 
-                $q=$baseQuery;
-                if( $tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
+                // if there are  too many tags, don't show the ones with only fewer articles
+
+                if($tagType == TAG_QUERY || $tagType == TAG_DISPLAY || $count > $miscTagThreshold)
                 {
-                    $q = "(" . $q . ") AND " . PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
-                }
-                if( $tagType == TAG_QUERY)
-                {
-                    $q = PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
-                }
+                    $rowArray=$blankRowArray;
+                    $rowArray[0][LABEL]=$articles[$d][0];
+                    $rowArray[0][ARTICLE_COUNT]=count($articles[$d])-1;
 
-                $rowArray[0][URL]="https://trove.nla.gov.au/result?q=" . urlencode($q);
-
-                if (DEBUG) {print "count(\$articles\[" . $d . "] " . count($articles[$d]) . "<br/>";}
-
-
-                for ($a=1; $a < count($articles[$d]); $a++)
-                {
-                    $article=$articles[$d][$a];
-                    $fullDate="";
-                    $heading="";
-                    $url="";
-
-                    for ($c=0; $c<$article->childNodes->length; $c++)
+                    $q=$baseQuery;
+                    if( $tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
                     {
-                        $node=$article->childNodes->item($c);
-                        if ($node->nodeName == "date")
+                        $q = "(" . $q . ") AND " . PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
+                    }
+                    if( $tagType == TAG_QUERY)
+                    {
+                        $q = PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
+                    }
+
+                    $rowArray[0][URL]="https://trove.nla.gov.au/result?q=" . urlencode($q);
+
+                    if (DEBUG) {print "count(\$articles\[" . $d . "] " . count($articles[$d]) . "<br/>";}
+
+
+                    for ($a=1; $a < count($articles[$d]); $a++)
+                    {
+                        $article=$articles[$d][$a];
+                        $fullDate="";
+                        $heading="";
+                        $url="";
+
+                        for ($c=0; $c<$article->childNodes->length; $c++)
                         {
-                            $fullDate=$node->nodeValue;
-                        }
-                        if ($node->nodeName == "heading")
-                        {
-                            $heading=$node->nodeValue;
-                        }
-                        if ($node->nodeName == "troveUrl")
-                        {
-                            $url=$node->nodeValue;
-                            if (strpos($url,"?")) {
-                                $url = substr($url, 0, strpos($url,"?"));
+                            $node=$article->childNodes->item($c);
+                            if ($node->nodeName == "date")
+                            {
+                                $fullDate=$node->nodeValue;
+                            }
+                            if ($node->nodeName == "heading")
+                            {
+                                $heading=$node->nodeValue;
+                            }
+                            if ($node->nodeName == "troveUrl")
+                            {
+                                $url=$node->nodeValue;
+                                if (strpos($url,"?")) {
+                                    $url = substr($url, 0, strpos($url,"?"));
+                                }
                             }
                         }
-                    }
-                    if ($fullDate <> "")
-                    {
-                        $year=substr($fullDate,0,4);
-                        $month=substr($fullDate,5,2);
-                        $col=(($year - $startYear) * 12) + $month;
-                        $rowArray[$col][URL]=$url;
-                        $rowArray[$col][ARTICLE_COUNT]++;
-                        if ($rowArray[$col][ARTICLE_COUNT] > 1)
+                        if ($fullDate <> "")
                         {
-                            $rowArray[$col][LABEL].="\n";
-                            $rowArray[$col][URL]=$rowArray[0][URL] . "&l-year=" . $year;
+                            $year=substr($fullDate,0,4);
+                            $month=substr($fullDate,5,2);
+                            $col=(($year - $startYear) * 12) + $month;
+                            $rowArray[$col][URL]=$url;
+                            $rowArray[$col][ARTICLE_COUNT]++;
+                            if ($rowArray[$col][ARTICLE_COUNT] > 1)
+                            {
+                                $rowArray[$col][LABEL].="\n";
+                                $rowArray[$col][URL]=$rowArray[0][URL] . "&l-year=" . $year;
+                            }
+                            // clean up any characters that will be a problem as an attribute value
+                            $heading=str_replace('"', '``', $heading);
+                            $heading=str_replace("'", "`", $heading);
+
+                            $rowArray[$col][LABEL].=$fullDate . ", " . $heading;
                         }
-                        // clean up any characters that will be a problem as an attribute value
-                        $heading=str_replace('"', '``', $heading);
-                        $heading=str_replace("'", "`", $heading);
-
-                        $rowArray[$col][LABEL].=$fullDate . ", " . $heading;
                     }
-                }
 
-                if ($d==1)
-                {
-                    searchTagHeader();
-                }
-
-                // when we have displayed all the query tags, add a blank input then display all the other tags
-                if ($d == count($queryStrings)+1)
-                {
-                    blankInput();
-                    displayTagHeader();
-                }
-
-                if ($tagType == TAG_QUERY || $rowArray[0][ARTICLE_COUNT] > 0)
-                {
-                    echo "
-		            <tr class=\"results\"
-                        id=\"display$d\"
-                ";
-                    if ($tagType == TAG_OTHER)
+                    if ($d==1)
                     {
-                        echo "style=\"display: none;\"";
+                        searchTagHeader();
                     }
 
-                    echo "
-                    >
-		                <th class=\"headcol\"
-                ";
-                    if ($tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
+                    // when we have displayed all the query tags, add a blank input then display all the other tags
+                    if ($d == count($queryStrings)+1)
+                    {
+                        blankInput();
+                        displayTagHeader();
+                    }
+
+                    if ($tagType == TAG_QUERY || $rowArray[0][ARTICLE_COUNT] > 0)
                     {
                         echo "
+		            <tr class=\"results\"
+                        id=\"display$d\"
+                    ";
+                        if ($tagType == TAG_OTHER)
+                        {
+                            echo "style=\"display: none;\"";
+                        }
+
+                        echo "
+                    >
+		                <th class=\"headcol\"
+                    ";
+                        if ($tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
+                        {
+                            echo "
                             onmouseover=\"document.getElementById('hideResults$d').style.visibility='visible'\"
                             onmouseout=\"document.getElementById('hideResults$d').style.visibility='hidden'\"
                     ";
-                    }
+                        }
 
-                    echo "
+                        echo "
                         >
                     ";
 
-                    $style="query-event";
-                    if ($tagType == TAG_QUERY)
-                    {
-                        echo  QUERY_INPUT . " value=\"" . $rowArray[0][LABEL] . "\"/>";
-                    }
-                    else
-                    {
-                        $style="summary-event";
-                        // if not query tag, then all other rows are display tags, except the summary row ($d==0)
-                        if ($d > 0)
+                        $style="query-event";
+                        if ($tagType == TAG_QUERY)
                         {
-                            $style="display-event";
-                            echo "
+                            echo  QUERY_INPUT . " value=\"" . $rowArray[0][LABEL] . "\"/>";
+                        }
+                        else
+                        {
+                            $style="summary-event";
+                            // if not query tag, then all other rows are display tags, except the summary row ($d==0)
+                            if ($d > 0)
+                            {
+                                $style="display-event";
+                                echo "
                             <span
                                 class=\"hideDisplayResults\"
                                 id=\"hideResults$d\"
@@ -1227,61 +1277,68 @@
                             x
                             </span>
                         ";
-                        }
-                        echo "
+                            }
+                            echo "
                         <span class=\"displayHeader\">" . $rowArray[0][LABEL] . "</span>
                     ";
-                    }
+                        }
 
-                    // Show number of articles to the right of the header, with a link to Trove to retrieve the articles.
-                    // The summary line ($d==0) uses the same query string as the original search ($baseQuery), query tag lines use the query tag only,base
-                    // and display lines use $baseQuery AND queryTag.
+                        // Show number of articles to the right of the header, with a link to Trove to retrieve the articles.
+                        // The summary line ($d==0) uses the same query string as the original search ($baseQuery), query tag lines use the query tag only,base
+                        // and display lines use $baseQuery AND queryTag.
 
-    //                $q=$baseQuery;
-    //                if( $tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
-    //                {
-    //                    $q = "(" . $q . ") AND " . PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
-    //                }
-    //                if( $tagType == TAG_QUERY)
-    //                {
-    //                    $q = PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
-    ///                }
-                    //                            href=\"https://trove.nla.gov.au/result?q=" . urlencode($q) . "\"
+                        //                $q=$baseQuery;
+                        //                if( $tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
+                        //                {
+                        //                    $q = "(" . $q . ") AND " . PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
+                        //                }
+                        //                if( $tagType == TAG_QUERY)
+                        //                {
+                        //                    $q = PUBLICTAG . "\"" . $rowArray[0][LABEL] . "\"";
+                        ///                }
+                        //                            href=\"https://trove.nla.gov.au/result?q=" . urlencode($q) . "\"
 
-                    echo "
-                        <div class=\"headerInfo\">
+                        echo "
+                        <div class=\"headerInfo\">";
+                        if ($rowArray[0][LABEL] == TAG_MISC)
+                        {
+                            echo "<span title=\"" . $rowArray[0][ARTICLE_COUNT] . " items with tags appearing in " . $miscTagThreshold . " or less articles.\">" .  $rowArray[0][ARTICLE_COUNT] . "</span>";
+                        }
+                        else
+                        {
+                            echo "
                             <a
                                 href=\"" . $rowArray[0][URL] . "\"
                                 target=\"blank\"
-                                    title=\"
+                                    title=\"";
+                            if ($rowArray[0][ARTICLE_COUNT] > 0) {
+                                echo $rowArray[0][ARTICLE_COUNT] . " items.\nClick to show on timeline.";
+                            }
+                            else
+                            {
+                                echo "No exact matches found. Items with tags containing this search term are shown in the summary line.\nSelect tags from the Tag Cloud to view related items in Display Tags";
+                            }
+                            echo "\"
+                                >" .
+                            $rowArray[0][ARTICLE_COUNT] . "
+                                </a>
+                        ";
+                        }
+                        echo "
+                            </div>
+                        </th>
                     ";
-                    if ($rowArray[0][ARTICLE_COUNT] > 0) {
-                        echo $rowArray[0][ARTICLE_COUNT] . " items.\nClick to show on timeline.";
-                    }
-                    else
-                    {
-                        echo "No exact matches found. Items with tags containing this search term are shown in the summary line.  <br/>Select tags from the Tag Cloud to view related items in Display Tags";
-                    }
-                    echo "
-                                    \"
-                            >" .
-                        $rowArray[0][ARTICLE_COUNT] . "
-                            </a>
-                        </div>
-                    ";
-
-                    echo "</th>";
-                    outputRow($rowArray, $style);
-                    echo "
-		                </tr>
+                        outputRow($rowArray, $style);
+                        echo "
+		            </tr>
 	                ";
+                    }
                 }
             }
-        }
 
-        searchButton();
+            searchButton();
 
-        echo "
+            echo "
                     </table>
                 </form>
             </div>
@@ -1291,6 +1348,7 @@
             $totalTime=time() - $startTime;
 
             tagCloud();
+        }
     }
 
 //    echo "
