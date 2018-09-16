@@ -751,27 +751,27 @@
         echo "
             <div class=\"tagCloudHeader\">
                 <span title=\"";
-        if (count($tags) > TAG_THRESHOLD)
-        {
-            echo $headerToolTip1;
-        }
-        else
-        {
+//        if (count($tags) > TAG_THRESHOLD)
+//        {
+//            echo $headerToolTip1;
+//        }
+//        else
+//        {
             echo $headerToolTip2;
-        }
+//        }
         echo "\">Tags</span>
                 <div class=\"tagCloudHeader_left\">
                     <span
                         class=\"tagCloudButton_left\"
         ";
-        if (count($tags) > TAG_THRESHOLD)
-        {
-            echo "
-                        >
-                        &nbsp;
-            ";
-        }
-        else
+//        if (count($tags) > TAG_THRESHOLD)
+//        {
+//            echo "
+//                        >
+//                        &nbsp;
+//            ";
+//        }
+//        else
         {
             echo "
                         title=\"" . $showMinorTagsToolTip . "\"
@@ -840,21 +840,30 @@
                             $classId = "tag" . $tagGroup;
                             $displayId = "display$t_value[1]";
 
-                            // if there are too many tags, don't display those with only 1 article
+                            echo "
+                                <span
+                                    class=\"$classId\"
+                            ";
+
+                            // if there are too many tags, we consolidate the those with only 1 article into a single timeline,
+                            // so no onclick for them, and a different title
                             if (count($tags) <= TAG_THRESHOLD || (count($tags) > TAG_THRESHOLD && $count > 1))
                             {
                                 echo "
-                                <span
-                                    class=\"$classId\"
                                     title=\"$count items.\nClick to show on timeline.\"
                                     onclick=\"showDisplayTag('$displayId')\"
                                 >
-                            ";
-                                echo $s;
-                                echo "
-                                </span>
-                            ";
+                                ";
                             }
+                            else
+                            {
+                                echo "
+                                    title=\"$count item.\nThis item is displayed on the " . TAG_MISC . " timeline.\"
+                                >
+                                ";
+                            }
+                            echo $s;
+                            echo "</span>";                           
                         }
                     }
                     echo "
