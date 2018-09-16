@@ -543,7 +543,7 @@
 	{
         if (DEBUG) { print time() . " start processArticles<br/>"; }
 
-		global $articles, $tags;
+		global $articles, $tags, $miscTagThreshold, $displayStrings;
 
         //  $articles:  an array of article objects retrieved from Trove
         //                  first row is all articles
@@ -595,42 +595,47 @@
 
         // if there are too many tags, add a row to articles for tags with only 1 article.
         // By doing this, we don't need a seperate row for these tags and and don't need to include the tags in the tag cloud,
-        // significant;y reducing the size of the html.
+        // significantly reducing the size of the html.
 
         if (count($tags) > TAG_THRESHOLD)
         {
+            // calculate $miscTagThreshold and $tagMaxMin
+            tagStats();
+
             // add the tag to $tags
             insertTag(TAG_MISC, TAG_DISPLAY);
             // create the $articles node
             insertArticle(TAG_MISC);
             array_push($displayStrings, TAG_MISC);
 
-            // find all tags with only 1 article and add the article to the TAG_MISC row
+            // find all tags that appear in less than the minimum number of articles and add the articles to the TAG_MISC row
             for ($a=1; $a<count($articles)-1; $a++)
             {
-                if (count($articles[$a]) == 2)
+                if (count($articles[$a]) - 1 <= $miscTagThreshold)
                 {
-                    // make sure that the article isn't already in the list
-
-                    $articleId = getArticleId($articles[$a][1]);
-                    $x=0;
-                    $articleIndex=count($articles)-1;
-
-                    for ($aa=1; $aa<count($articles[$articleIndex]); $aa++)
+                    for ($a2=1; $a2<count($articles[$a]) - 1; $a2++)
                     {
-                        // compare article ids & increment $x if they match
-                        if (getArticleId($articles[$articleIndex][$aa]) == $articleId)
+                        // make sure that the article isn't already in the list
+                        $articleId = getArticleId($articles[$a][$a2]);
+                        $x=0;
+                        $articleIndex=count($articles)-1;
+
+                        for ($a3=1; $a3<count($articles[$articleIndex]); $a3++)
                         {
-                            $x++;
-                            // we can stop searching now - we know the article is already listed
-                            $aa=count($articles[$articleIndex]);
+                            // compare article ids & increment $x if they match
+                            if (getArticleId($articles[$articleIndex][$a3]) == $articleId)
+                            {
+                                $x++;
+                                // we can stop searching now - we know the article is already listed
+                                $a3=count($articles[$articleIndex]);
+                            }
                         }
-                    }
 
-                    // If we didn't find the article, add it
-                    if ($x == 0)
-                    {
-                        array_push($articles[count($articles)-1],$articles[$a][1]);
+                        // If we didn't find the article, add it
+                        if ($x == 0)
+                        {
+                            array_push($articles[count($articles)-1],$articles[$a][$a2]);
+                        }
                     }
                 }
             }
@@ -638,6 +643,48 @@
 
         if (DEBUG) { print time() . " end processArticles<br/>"; }
 	}
+
+    function tagStats()
+    {
+        global $tagMaxMin, $tags, $miscTagThreshold, $articles;
+
+        $tagCounts=array();
+        $tagCounts[1]=0;
+
+        foreach($tags as $t => $t_value)
+        {
+            if (DEBUG) {print($t_value[1] . " - " . $t_value[2] . "<br/>"); }
+
+            $count = count($articles[$t_value[1]]) - 1;
+            if (!array_key_exists($count,$tagCounts))
+            {
+                $tagCounts[$count]=0;
+            }
+            $tagCounts[$count]++;
+
+            if ($t_value[2]!=TAG_QUERY)
+            {
+                if (DEBUG) {print($count . "<br/>");}
+
+                if ($count > $tagMaxMin[0])
+                {
+                    $tagMaxMin[0]=$count;
+                    $tagMaxMin[2]=$t;
+                }
+                if ($count < $tagMaxMin[1])
+                {
+                    $tagMaxMin[1]=$count;
+                }
+            }
+        }
+
+        $miscTags=0;
+        while (count($tags) - $miscTags > TAG_THRESHOLD)
+        {
+            $miscTagThreshold++;
+            $miscTags+=$tagCounts[$miscTagThreshold];
+        }
+    }
 
     function getArticleId($article)
     {
@@ -738,7 +785,7 @@
     {
         //  presents all tags found in the result set.
 
-        global $tags, $tagMaxMin, $articles;
+        global $tags, $tagMaxMin, $articles, $miscTagThreshold;
 
         $headerToolTip1 = "Word cloud showing tags found in the search results. \nTags that are associated with only 1 item are not shown; articles for these tags are displayed on the Miscellaneous Tags line";
         $headerToolTip2 = "Word cloud showing tags found in the search results. \nTags that are associated with only 1 item are not shown initially; click the chevron to the left to show/hide theses tags";
@@ -824,7 +871,7 @@
                         if ($t_value[0] != TAG_MISC)
                         {
                             $count = count($articles[$t_value[1]])-1;
-                            if($count > 1)
+                            if($count > $miscTagThreshold)
                             {
                                 $tagGroup=ceil($count/(ceil($tagMaxMin[0]/8))) + 1;
                                 if ($tagGroup > 9)
@@ -845,9 +892,9 @@
                                     class=\"$classId\"
                             ";
 
-                            // if there are too many tags, we consolidate the those with only 1 article into a single timeline,
+                            // if there are too many tags, we consolidate the those with fewer articles into a single timeline,
                             // so no onclick for them, and a different title
-                            if (count($tags) <= TAG_THRESHOLD || (count($tags) > TAG_THRESHOLD && $count > 1))
+                            if ($count > $miscTagThreshold)
                             {
                                 echo "
                                     title=\"$count items.\nClick to show on timeline.\"
@@ -858,12 +905,21 @@
                             else
                             {
                                 echo "
-                                    title=\"$count item.\nThis item is displayed on the " . TAG_MISC . " timeline.\"
+                                    title=\"$count item";
+                                if ($count>1)
+                                {
+                                    echo "s.\nThese items are ";
+                                }
+                                else
+                                {
+                                    echo ".\nThis item is ";
+                                }
+                                echo "displayed on the " . TAG_MISC . " timeline.\"
                                 >
                                 ";
                             }
                             echo $s;
-                            echo "</span>";                           
+                            echo "</span>";
                         }
                     }
                     echo "
@@ -949,6 +1005,7 @@
     $tags =array();
     //$tagIndex = array();
     $tagMaxMin=array(0,0,"");
+    $miscTagThreshold = 0;
 
     // get query and display tags and initialise $articles array
     initaliseArticles();
@@ -996,25 +1053,8 @@
 
         if (DEBUG) {print("get tag max/min - " . count($articles) . " entries in articles<br/>"); }
 
-        foreach($tags as $t => $t_value)
-        {
-            if (DEBUG) {print($t_value[1] . " - " . $t_value[2] . "<br/>"); }
-            if ($t_value[2]!=TAG_QUERY)
-            {
-                $count = count($articles[$t_value[1]]) - 1;
-                if (DEBUG) {print($count . "<br/>");}
+        // record the max and min of the number of articles for tags, and work out what the threshold is for display tags ($miscTagThreshold)
 
-                if ($count > $tagMaxMin[0])
-                {
-                    $tagMaxMin[0]=$count;
-                    $tagMaxMin[2]=$t;
-                }
-                if ($count < $tagMaxMin[1])
-                {
-                    $tagMaxMin[1]=$count;
-                }
-            }
-        }
 
         if (count($displayStrings) == 0)
         {
@@ -1054,15 +1094,16 @@
 
         for ($d=0; $d<count($articles); $d++)
         {
+            $tagType=$tags[strtolower($articles[$d][0])][2];
             $count = count($articles[$d])-1;
-            // if there are  too many tags, don't show the ones with only 1 article
-            if(count($tags) <= TAG_THRESHOLD || (count($tags) > TAG_THRESHOLD && $count > 1))
+
+            // if there are  too many tags, don't show the ones with only fewer articles
+
+            if($tagType == TAG_DISPLAY || $count > $miscTagThreshold)
             {
                 $rowArray=$blankRowArray;
                 $rowArray[0][LABEL]=$articles[$d][0];
                 $rowArray[0][ARTICLE_COUNT]=count($articles[$d])-1;
-
-                $tagType=$tags[strtolower($articles[$d][0])][2];
 
                 $q=$baseQuery;
                 if( $tagType == TAG_DISPLAY || $tagType == TAG_OTHER)
