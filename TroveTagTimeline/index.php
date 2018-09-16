@@ -641,7 +641,7 @@
             {
                 if (count($articles[$a]) - 1 <= $miscTagThreshold)
                 {
-                    for ($a2=1; $a2<count($articles[$a]) - 1; $a2++)
+                    for ($a2=1; $a2<count($articles[$a]); $a2++)
                     {
                         // make sure that the article isn't already in the list
                         $articleId = getArticleId($articles[$a][$a2]);
